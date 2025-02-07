@@ -235,10 +235,22 @@ exports.main = async (event, context) => {
         const $ = cheerio.load(html)
         const imageUrls = new Set()
 
-        // 打印一下页面内容，看看是否包含目标内容
-        console.log('页面是否包含1040g:', html.includes('1040g'))
-        console.log('页面是否包含nd_dft_wlteh_jpg_3:', html.includes('nd_dft_wlteh_jpg_3'))
+       // 提取标题和描述
+let title = '', desc = '';
 
+// 使用更精确的正则表达式
+const contentMatch = html.match(/"title":"([^"]+)","desc":"([^"]+)"/);
+if (contentMatch) {
+    title = contentMatch[1];  // 第一个捕获组是 title
+    desc = contentMatch[2];   // 第二个捕获组是 desc
+    
+    // 处理描述中的特殊标记
+    desc = desc.replace(/\\n/g, '\n')  // 处理换行
+             .replace(/\[话题\]#/g, '') // 移除话题标记
+             
+    console.log('提取到的标题:', title);
+    console.log('提取到的描述:', desc);
+}
         // 尝试直接匹配图片ID
         const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g)
         if (allMatches) {
@@ -250,7 +262,6 @@ exports.main = async (event, context) => {
             })
         }
 
-        // 尝试匹配完整的图片URL
         const urlMatches = html.match(/https?:\/\/[^"'\s]+1040g[^"'\s]+/g)
         if (urlMatches) {
             console.log('找到所有可能的图片URL:', urlMatches)
@@ -281,7 +292,9 @@ exports.main = async (event, context) => {
 
         return {
             code: 0,
-            data: result
+            data: result,
+            title: title || '',
+            desc: desc || ''
         }
 
     } catch (error) {
