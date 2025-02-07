@@ -1,0 +1,28 @@
+<!--pages/result/result.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">{{title}}</text>
+  </view>
+
+  <view class="grid">
+    <block wx:for="{{images}}" wx:key="index">
+      <view class="grid-item">
+        <image 
+          src="{{item}}" 
+          mode="aspectFill" 
+          bindtap="onPreviewImage" 
+          data-url="{{item}}"
+          class="image"
+        />
+        <view class="copy-btn" bindtap="onCopyLink" data-url="{{item}}">复制链接</view>
+      </view>
+    </block>
+  </view>
+
+  <view class="buttons">
+    <button class="btn" bindtap="onClear">清空</button>
+    <button class="btn primary" bindtap="onDownloadAll">高级下载</button>
+  </view>
+  
+  <view class="tip">每日需看一次视频解锁高级下载功能</view>
+</view>

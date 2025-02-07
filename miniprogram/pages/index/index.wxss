@@ -1,0 +1,254 @@
+/* 页面整体布局 */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx;
+  background-color: #f7f7f7;
+}
+
+/* 标题 */
+.header {
+  width: 100%;
+  text-align: center;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  padding: 30rpx 0;
+}
+
+/* 输入框区域 */
+.input-area {
+  width: 100%;
+  margin: 20rpx 0;
+  background: #fff;
+  border-radius: 50rpx;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+}
+
+.url-input {
+  width: 100%;
+  height: 80rpx;
+  background: #f5f5f5;
+  border-radius: 40rpx;
+  padding: 0 30rpx;
+  font-size: 28rpx;
+  border: none;
+  outline: none;
+}
+
+/* 按钮组 */
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12rpx;
+  margin: 20rpx 0;
+}
+
+.function-btn {
+  flex: 1;
+  height: 70rpx;
+  font-size: 28rpx;
+  border-radius: 35rpx;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+/* 解析按钮 */
+.analyze {
+  background: linear-gradient(45deg, #ff7eb3, #ff758c);
+}
+
+/* 下载按钮 */
+.download {
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+}
+
+/* 复制/刷新按钮 */
+.function-btn:last-child {
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+}
+
+/* 按钮点击效果 */
+.function-btn:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
+
+/* 按钮图标 */
+.function-btn .icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 10rpx;
+}
+
+/* 移除按钮的默认边框和背景 */
+.function-btn::after {
+  border: none;
+}
+
+/* 按钮文字 */
+.btn-text {
+  font-weight: 500;
+  letter-spacing: 2rpx;
+}
+
+/* 解析结果 */
+.result-section {
+  width: 100%;
+  padding: 20rpx;
+  background: #fff;
+  border-radius: 10rpx;
+  margin-top: 20rpx;
+}
+
+/* 图片列表样式 */
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  padding: 20rpx 0;
+}
+
+.image-item {
+  width: calc(50% - 10rpx);
+  background: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.result-image {
+  width: 100%;
+  height: 400rpx;
+  display: block;
+  border-radius: 12rpx 12rpx 0 0;
+  vertical-align: bottom;
+  font-size: 0;
+}
+
+/* 复制链接按钮 */
+.copy-btn {
+  width: 100%;
+  height: 70rpx;
+  line-height: 60rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  background: #669DEA;  /* 使用图片中显示的背景色 */
+  border: none;
+  border-radius: 0 0 12rpx 12rpx;
+  padding: 0;
+  margin: -5rpx !important; /* 强制移除所有边距 */
+  display: block;
+  position: relative;
+}
+
+/* 确保按钮没有默认样式 */
+.copy-btn::after {
+  border: none;
+}
+
+/* 点击效果 */
+.copy-btn:active {
+  opacity: 0.9;
+}
+
+/* 在现有样式基础上添加 */
+.multi-btn {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 20rpx;
+}
+
+.download-all {
+  background: linear-gradient(45deg, #ff7eb3, #ff758c);
+}
+
+.copy-text {
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+}
+
+.premium {
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+}
+
+/* 在现有样式基础上添加 */
+.text-content {
+  margin-top: 30rpx;
+  padding: 20rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.text-header {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 1px solid #eee;
+}
+
+.text-section {
+  margin: 15rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.text-label {
+  color: #666;
+  font-size: 28rpx;
+}
+
+.text-value {
+  color: #333;
+  font-size: 28rpx;
+  word-break: break-all;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.copy-btn {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+}
+
+/* 下载进度样式 */
+.download-progress {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 30rpx;
+  border-radius: 12rpx;
+  color: white;
+  text-align: center;
+  z-index: 1000;
+}
+
+.progress-text {
+  font-size: 28rpx;
+  margin-bottom: 10rpx;
+}
+
+.progress-count {
+  font-size: 40rpx;
+  font-weight: bold;
+}
+

@@ -1,0 +1,66 @@
+<view class="container">
+  <view class="header">
+    <text class="title">果果去水印工具</text>
+  </view>
+
+  <view class="input-area">
+    <input 
+      class="url-input" 
+      placeholder="请粘贴小红书分享链接" 
+      value="{{url}}"
+      bindinput="onInput"
+    />
+  </view>
+
+  <!-- 按钮组 -->
+  <view class="button-group">
+    <button class="function-btn analyze" hover-class="button-hover" bindtap="parseUrl">
+      <text class="btn-text">解析</text>
+    </button>
+    <button class="function-btn download" hover-class="button-hover" bindtap="downloadAll">
+      <text class="btn-text">下载全部</text>
+    </button>
+    <button 
+      class="function-btn" 
+      hover-class="button-hover" 
+      bindtap="{{resultData ? 'copyText' : 'onRefresh'}}"
+    >
+      <text class="btn-text">{{resultData ? '复制文案' : '刷新'}}</text>
+    </button>
+  </view>
+
+  <!-- 下载进度展示 -->
+  <view class="download-progress" wx:if="{{showProgress}}">
+    <view class="progress-text">第 {{currentDownload}} 张下载完成</view>
+    <view class="progress-count">{{currentDownload}}/{{totalImages}}</view>
+  </view>
+
+  <!-- 结果展示区域 -->
+  <view class="result-section" wx:if="{{resultData}}">
+    <view class="image-list">
+      <view class="image-item" wx:for="{{resultData.urls}}" wx:key="index">
+        <image 
+          class="result-image" 
+          src="{{item}}" 
+          mode="widthFix"
+          bindtap="previewImage"
+          data-url="{{item}}"
+        />
+        <button class="copy-btn" bindtap="copyImageUrl" data-url="{{item}}">复制链接</button>
+      </view>
+    </view>
+
+    <!-- 文案展示区域 -->
+    <view class="text-content" wx:if="{{resultData.title || resultData.desc}}">
+      <view class="text-header">内容文案</view>
+      <view class="text-section" wx:if="{{resultData.title}}">
+        <text class="text-label">标题：</text>
+        <text class="text-value">{{resultData.title}}</text>
+      </view>
+      <view class="text-section">
+        <text class="text-label">描述：</text>
+        <text class="text-value">{{resultData.desc}}</text>
+      </view>
+    </view>
+  </view>
+</view>
