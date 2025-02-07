@@ -1,0 +1,37 @@
+<view class="container">
+  <!-- 输入区域 -->
+  <view class="input-section">
+    <textarea 
+      class="url-input" 
+      placeholder="请粘贴小红书链接" 
+      value="{{url}}"
+      bindinput="onInput"
+      auto-height
+    />
+    <button class="parse-btn" 
+            bindtap="parseUrl"
+            loading="{{loading}}">
+      解析
+    </button>
+  </view>
+
+  <!-- 图片网格区域 -->
+  <view class="image-grid" wx:if="{{images.length > 0}}">
+    <view class="image-item" wx:for="{{images}}" wx:key="index">
+      <image 
+        src="{{item}}" 
+        mode="aspectFill" 
+        bindtap="previewImage" 
+        data-url="{{item}}"
+      />
+      <view class="image-actions">
+        <button class="copy-btn" bindtap="copyImageUrl" data-url="{{item}}">复制链接</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态提示 -->
+  <view class="empty-state" wx:if="{{!loading && images.length === 0}}">
+    <text>粘贴链接即可解析图片</text>
+  </view>
+</view>
