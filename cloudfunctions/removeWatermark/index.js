@@ -235,22 +235,50 @@ exports.main = async (event, context) => {
         const $ = cheerio.load(html)
         const imageUrls = new Set()
 
-       // 提取标题和描述
-let title = '', desc = '';
+        // 修改提取标题和描述的部分
+        let title = '', desc = '';
 
-// 使用更精确的正则表达式
-const contentMatch = html.match(/"title":"([^"]+)","desc":"([^"]+)"/);
-if (contentMatch) {
-    title = contentMatch[1];  // 第一个捕获组是 title
-    desc = contentMatch[2];   // 第二个捕获组是 desc
-    
-    // 处理描述中的特殊标记
-    desc = desc.replace(/\\n/g, '\n')  // 处理换行
-             .replace(/\[话题\]#/g, '') // 移除话题标记
-             
-    console.log('提取到的标题:', title);
-    console.log('提取到的描述:', desc);
-}
+        // 从 title 标签提取标题
+        const titleMatch = html.match(/<title>(.*?) - 小红书<\/title>/);
+        if (titleMatch) {
+            title = titleMatch[1];
+            console.log('从title标签提取到的标题:', title);
+        }
+
+        // 从 meta description 提取描述
+        const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+        if (descMatch) {
+            desc = descMatch[1];
+            // 处理描述文本，移除多余空格
+            desc = desc.trim();
+            console.log('从meta标签提取到的描述:', desc);
+        }
+
+        // 如果上述方法失败，使用备用方法
+        if (!title || !desc) {
+            // 尝试从 JSON 数据中提取
+            const noteDataMatch = html.match(/"title":"(.*?)","desc":"(.*?)","user":/);
+            if (noteDataMatch) {
+                title = title || noteDataMatch[1];
+                desc = desc || noteDataMatch[2];
+                
+                // 处理转义字符
+                title = title.replace(/\\"/g, '"')
+                            .replace(/\\n/g, '\n')
+                            .replace(/\\/g, '');
+                            
+                desc = desc.replace(/\\"/g, '"')
+                          .replace(/\\n/g, '\n')
+                          .replace(/\\/g, '')
+                          .replace(/\[话题\]/g, '');
+                          
+                console.log('从JSON数据提取到的内容:', { title, desc });
+            }
+        }
+
+        // 输出调试信息
+        console.log('最终提取结果:', { title, desc });
+
         // 尝试直接匹配图片ID
         const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g)
         if (allMatches) {
@@ -294,7 +322,8 @@ if (contentMatch) {
             code: 0,
             data: result,
             title: title || '',
-            desc: desc || ''
+            desc: desc || '',
+            msg: result.length > 0 ? 'success' : '未找到图片'
         }
 
     } catch (error) {
