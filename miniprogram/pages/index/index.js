@@ -11,7 +11,7 @@ Page({
   onInput(e) {
     this.setData({
       url: e.detail.value
-    })
+    });
   },
 
   parseUrl() {
@@ -19,45 +19,50 @@ Page({
       wx.showToast({
         title: '请输入链接',
         icon: 'none'
-      })
-      return
+      });
+      return;
     }
 
-    this.setData({ loading: true })
-    wx.showLoading({ title: '解析中...' })
+    this.setData({ loading: true });
+    wx.showLoading({ title: '解析中...' });
 
     wx.cloud.callFunction({
       name: 'removeWatermark',
       data: { url: this.data.url },
       success: res => {
-        console.log('云函数返回数据：', res)
+        console.log('云函数返回数据：', res);
         if (res.result.code === 0) {
+          // 处理视频和图片
           this.setData({ 
             resultData: {
-              urls: res.result.data,
+              // 如果是视频，则将云函数返回的视频地址（存储在 data 字段）赋给 resultData.data
+              data: res.result.type === 'video' ? res.result.data : '',
+              // 如果是图片，则保留 urls 字段
+              urls: res.result.type === 'image' ? res.result.data : [],
               title: res.result.title || '',
-              desc: res.result.desc || ''
+              desc: res.result.desc || '',
+              type: res.result.type
             }
-          })
+          });
         } else {
           wx.showToast({
             title: res.result.msg || '解析失败',
             icon: 'none'
-          })
+          });
         }
       },
       fail: err => {
-        console.error('云函数调用失败：', err)
+        console.error('云函数调用失败：', err);
         wx.showToast({
           title: '解析失败',
           icon: 'none'
-        })
+        });
       },
       complete: () => {
-        this.setData({ loading: false })
-        wx.hideLoading()
+        this.setData({ loading: false });
+        wx.hideLoading();
       }
-    })
+    });
   },
 
   downloadAll() {
@@ -65,60 +70,58 @@ Page({
       wx.showToast({
         title: '请先解析链接',
         icon: 'none'
-      })
-      return
+      });
+      return;
     }
     
-    const totalImages = this.data.resultData.urls.length
+    const totalImages = this.data.resultData.urls.length;
     this.setData({
       showProgress: true,
       currentDownload: 0,
       totalImages
-    })
+    });
 
     const downloadNext = (index) => {
       if (index >= totalImages) {
         // 全部下载完成
-        this.setData({ showProgress: false })
-        wx.showToast({ title: '下载完成', icon: 'success' })
-        return
+        this.setData({ showProgress: false });
+        wx.showToast({ title: '下载完成', icon: 'success' });
+        return;
       }
 
-      const url = this.data.resultData.urls[index]
+      const url = this.data.resultData.urls[index];
       wx.downloadFile({
         url,
         success: res => {
           wx.saveImageToPhotosAlbum({
             filePath: res.tempFilePath,
             success: () => {
-              this.setData({
-                currentDownload: index + 1
-              })
+              this.setData({ currentDownload: index + 1 });
               // 下载下一张
-              downloadNext(index + 1)
+              downloadNext(index + 1);
             },
             fail: () => {
-              this.setData({ showProgress: false })
-              wx.showToast({ title: '保存失败', icon: 'none' })
+              this.setData({ showProgress: false });
+              wx.showToast({ title: '保存失败', icon: 'none' });
             }
-          })
+          });
         },
         fail: () => {
-          this.setData({ showProgress: false })
-          wx.showToast({ title: '下载失败', icon: 'none' })
+          this.setData({ showProgress: false });
+          wx.showToast({ title: '下载失败', icon: 'none' });
         }
-      })
-    }
+      });
+    };
 
     // 开始下载第一张
-    downloadNext(0)
+    downloadNext(0);
   },
 
   onRefresh() {
     this.setData({
       url: '',
       resultData: null
-    })
+    });
   },
 
   copyText() {
@@ -153,23 +156,43 @@ Page({
   },
 
   previewImage(e) {
-    const { url } = e.currentTarget.dataset
+    const { url } = e.currentTarget.dataset;
     wx.previewImage({
       current: url,
       urls: this.data.resultData.urls
-    })
+    });
   },
 
   copyImageUrl(e) {
-    const { url } = e.currentTarget.dataset
+    const { url } = e.currentTarget.dataset;
     wx.setClipboardData({
       data: url,
       success: () => {
         wx.showToast({
           title: '链接已复制',
           icon: 'success'
-        })
+        });
       }
-    })
+    });
+  },
+
+  copyVideoUrl() {
+    if (!this.data.resultData?.data) {
+      wx.showToast({
+        title: '暂无视频链接',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.setClipboardData({
+      data: this.data.resultData.data,
+      success: () => {
+        wx.showToast({
+          title: '视频链接已复制',
+          icon: 'success'
+        });
+      }
+    });
   }
-})
+});

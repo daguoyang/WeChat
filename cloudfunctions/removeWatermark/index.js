@@ -216,121 +216,186 @@ async function fetchPage(url) {
     return response.data
 }
 
+
+// **提取视频 ID**
+function extractVideoId(html) {
+  const match = html.match(/"videoId":"(.*?)"/);
+  return match ? match[1] : null;
+}
+
+// **请求小红书 API 获取视频 URL**
+async function fetchVideoUrl(videoId) {
+  try {
+      const apiUrl = `https://www.xiaohongshu.com/fe_api/burdock/v2/note/video/${videoId}`;
+      const response = await axios.get(apiUrl, {
+          headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+              'Referer': 'https://www.xiaohongshu.com',
+              'Accept': 'application/json'
+          }
+      });
+
+      console.log('视频 API 返回:', response.data);
+
+      if (response.data?.data?.play?.url) {
+          return response.data.data.play.url;
+      }
+
+      console.error('未找到视频 URL:', response.data);
+      return null;
+  } catch (error) {
+      console.error('获取视频失败:', error);
+      return null;
+  }
+}
+
+
+
+
 // 云函数入口函数
 exports.main = async (event, context) => {
-    console.log('开始处理请求:', event)
-    
-    try {
-        const url = extractUrl(event.url)
-        console.log('处理URL:', url)
-        
-        const redirectUrl = await getRedirectUrl(url)
-        console.log('重定向URL:', redirectUrl)
-        
-        const html = await fetchPage(redirectUrl)
-        console.log('页面长度:', html.length)
-        console.log('[调试] HTML 预览:', html.substring(0, 1000))
+  console.log('开始处理请求:', event);
+  
+  try {
+      const url = extractUrl(event.url);
+      console.log('处理URL:', url);
+      
+      const redirectUrl = await getRedirectUrl(url);
+      console.log('重定向URL:', redirectUrl);
+      
+      const html = await fetchPage(redirectUrl);
+      console.log('页面长度:', html.length);
+      console.log('[调试] HTML 预览:', html.substring(0, 1000));
 
-        // 使用 cheerio 加载 HTML
-        const $ = cheerio.load(html)
-        const imageUrls = new Set()
+      // 使用 cheerio 加载 HTML
+      const $ = cheerio.load(html);
 
-        // 修改提取标题和描述的部分
-        let title = '', desc = '';
+      // **提取标题和描述**
+      let title = '', desc = '';
 
-        // 从 title 标签提取标题
-        const titleMatch = html.match(/<title>(.*?) - 小红书<\/title>/);
-        if (titleMatch) {
-            title = titleMatch[1];
-            console.log('从title标签提取到的标题:', title);
-        }
+      // 从 <title> 标签提取标题
+      const titleMatch = html.match(/<title>(.*?) - 小红书<\/title>/);
+      if (titleMatch) {
+          title = titleMatch[1];
+          console.log('从title标签提取到的标题:', title);
+      }
 
-        // 从 meta description 提取描述
-        const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
-        if (descMatch) {
-            desc = descMatch[1];
-            // 处理描述文本，移除多余空格
-            desc = desc.trim();
-            console.log('从meta标签提取到的描述:', desc);
-        }
+      // 从 <meta> 标签提取描述
+      const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+      if (descMatch) {
+          desc = descMatch[1].trim(); // 去除前后空格
+          console.log('从meta标签提取到的描述:', desc);
+      }
 
-        // 如果上述方法失败，使用备用方法
-        if (!title || !desc) {
-            // 尝试从 JSON 数据中提取
-            const noteDataMatch = html.match(/"title":"(.*?)","desc":"(.*?)","user":/);
-            if (noteDataMatch) {
-                title = title || noteDataMatch[1];
-                desc = desc || noteDataMatch[2];
-                
-                // 处理转义字符
-                title = title.replace(/\\"/g, '"')
-                            .replace(/\\n/g, '\n')
-                            .replace(/\\/g, '');
-                            
-                desc = desc.replace(/\\"/g, '"')
-                          .replace(/\\n/g, '\n')
-                          .replace(/\\/g, '')
-                          .replace(/\[话题\]/g, '');
-                          
-                console.log('从JSON数据提取到的内容:', { title, desc });
-            }
-        }
+      // 备用方案：从 JSON 数据中提取
+      if (!title || !desc) {
+          const noteDataMatch = html.match(/"title":"(.*?)","desc":"(.*?)","user":/);
+          if (noteDataMatch) {
+              title = title || noteDataMatch[1];
+              desc = desc || noteDataMatch[2];
 
-        // 输出调试信息
-        console.log('最终提取结果:', { title, desc });
+              // 处理转义字符
+              title = title.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '');
+              desc = desc.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '').replace(/\[话题\]/g, '');
+              
+              console.log('从JSON数据提取到的内容:', { title, desc });
+          }
+      }
 
-        // 尝试直接匹配图片ID
-        const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g)
-        if (allMatches) {
-            console.log('找到所有可能的图片ID:', allMatches)
-            allMatches.forEach(id => {
-                console.log('处理图片ID:', id)
-                const url = `https://sns-img-qc.xhscdn.com/${id}?imageView2/format/webp`
-                imageUrls.add(url)
-            })
-        }
+      // **检查是否是视频内容**
+      const videoTypeMatch = html.match(/<meta name="og:type" content="([^"]+)"/);
+      const isVideo = videoTypeMatch && videoTypeMatch[1] === 'video';
+      console.log('内容类型:', isVideo ? 'video' : 'image');
 
-        const urlMatches = html.match(/https?:\/\/[^"'\s]+1040g[^"'\s]+/g)
-        if (urlMatches) {
-            console.log('找到所有可能的图片URL:', urlMatches)
-            urlMatches.forEach(url => {
-                const idMatch = url.match(/1040g[a-z0-9]+(?=!nd_)/)
-                if (idMatch) {
-                    console.log('从URL中提取图片ID:', idMatch[0])
-                    const cleanUrl = `https://sns-img-qc.xhscdn.com/${idMatch[0]}?imageView2/format/webp`
-                    imageUrls.add(cleanUrl)
-                }
-            })
-        }
+      if (isVideo) {
+          // 尝试从 __INITIAL_STATE__ 中提取视频地址
+          const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?})<\/script>/);
+          if (stateMatch) {
+              try {
+                  // 清理 JSON 字符串中的特殊字符
+                  const jsonStr = stateMatch[1].replace(/undefined/g, 'null');
+                  const jsonData = JSON.parse(jsonStr);
+                  
+                  // 新的视频地址提取路径
+                  const videoUrl = jsonData?.note?.noteDetailMap?.[jsonData?.note?.currentNoteId]?.note?.video?.media?.stream?.h264[0]?.masterUrl;
+                  
+                  if (videoUrl) {
+                      console.log('找到视频地址:', videoUrl);
+                      return {
+                          code: 0,
+                          type: 'video',
+                          data: videoUrl,
+                          title,
+                          desc,
+                          msg: 'success'
+                      };
+                  } else {
+                      console.log('未找到视频地址');
+                  }
+              } catch (e) {
+                  console.error('解析视频JSON失败:', e);
+                  // 输出更详细的错误信息
+                  if (stateMatch[1]) {
+                      console.log('JSON字符串预览:', stateMatch[1].substring(0, 200));
+                  }
+              }
+          }
+      }
 
-        if (imageUrls.size === 0) {
-            // 输出一小段包含1040g的内容
-            const context = html.split('1040g').map(part => {
-                const start = Math.max(0, part.length - 50)
-                const end = Math.min(part.length, 100)
-                return part.slice(start, end)
-            })
-            console.log('包含1040g的上下文:', context)
-            return { code: -1, msg: '未找到图片' }
-        }
+      // **如果不是视频，则解析图片**
+      const imageUrls = new Set();
 
-        const result = Array.from(imageUrls)
-        console.log('找到图片数量:', result.length)
-        console.log('第一张图片URL:', result[0])
+      // 直接匹配图片 ID
+      const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g);
+      if (allMatches) {
+          console.log('找到所有可能的图片ID:', allMatches);
+          allMatches.forEach(id => {
+              console.log('处理图片ID:', id);
+              const url = `https://sns-img-qc.xhscdn.com/${id}?imageView2/format/webp`;
+              imageUrls.add(url);
+          });
+      }
 
-        return {
-            code: 0,
-            data: result,
-            title: title || '',
-            desc: desc || '',
-            msg: result.length > 0 ? 'success' : '未找到图片'
-        }
+      // 直接匹配图片 URL
+      const urlMatches = html.match(/https?:\/\/[^"'\s]+1040g[^"'\s]+/g);
+      if (urlMatches) {
+          console.log('找到所有可能的图片URL:', urlMatches);
+          urlMatches.forEach(url => {
+              const idMatch = url.match(/1040g[a-z0-9]+(?=!nd_)/);
+              if (idMatch) {
+                  console.log('从URL中提取图片ID:', idMatch[0]);
+                  const cleanUrl = `https://sns-img-qc.xhscdn.com/${idMatch[0]}?imageView2/format/webp`;
+                  imageUrls.add(cleanUrl);
+              }
+          });
+      }
 
-    } catch (error) {
-        console.error('处理失败:', error)
-        return {
-            code: -1,
-            msg: error.message
-        }
-    }
-} 
+      if (imageUrls.size === 0) {
+          // 输出一小段包含 1040g 的内容
+          const context = html.split('1040g').map(part => {
+              const start = Math.max(0, part.length - 50);
+              const end = Math.min(part.length, 100);
+              return part.slice(start, end);
+          });
+          console.log('包含1040g的上下文:', context);
+          return { code: -1, msg: '未找到图片或视频' };
+      }
+
+      const result = Array.from(imageUrls);
+      console.log('找到图片数量:', result.length);
+      console.log('第一张图片URL:', result[0]);
+
+      return {
+          code: 0,
+          type: isVideo ? 'video' : 'image',
+          data: result,
+          title: title || '',
+          desc: desc || '',
+          msg: result.length > 0 ? 'success' : '未找到图片'
+      };
+
+  } catch (error) {
+      console.error('处理失败:', error);
+      return { code: -1, msg: error.message };
+  }
+};

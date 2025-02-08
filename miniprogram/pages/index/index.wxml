@@ -37,7 +37,8 @@
 
   <!-- 结果展示区域 -->
   <view class="result-section" wx:if="{{resultData}}">
-    <view class="image-list">
+    <!-- 图片展示区域 -->
+    <view class="image-list" wx:if="{{resultData.urls && resultData.urls.length > 0}}">
       <view class="image-item" wx:for="{{resultData.urls}}" wx:key="index">
         <image 
           class="result-image" 
@@ -49,7 +50,16 @@
         <button class="copy-btn" bindtap="copyImageUrl" data-url="{{item}}">复制链接</button>
       </view>
     </view>
-
+    <!-- 视频展示部分 -->
+    <view class="video-area" wx:if="{{resultData.type === 'video'}}">
+      <video 
+        class="video"
+        src="{{resultData.data}}"
+        show-center-play-btn="true"
+        controls
+      ></video>
+  <button class="video-copy-btn" bindtap="copyVideoUrl">复制视频链接</button>
+    </view>
     <!-- 文案展示区域 -->
     <view class="text-content" wx:if="{{resultData.title || resultData.desc}}">
       <view class="text-header">内容文案</view>
