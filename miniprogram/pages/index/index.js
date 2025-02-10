@@ -66,9 +66,54 @@ Page({
   },
 
   downloadAll() {
-    if (!this.data.resultData?.urls?.length) {
+    // 检查是否有解析结果
+    if (!this.data.resultData) {
       wx.showToast({
         title: '请先解析链接',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 处理视频下载
+    if (this.data.resultData.type === 'video') {
+      wx.showLoading({ title: '下载中...' });
+      wx.downloadFile({
+        url: this.data.resultData.data,
+        success: res => {
+          wx.saveVideoToPhotosAlbum({
+            filePath: res.tempFilePath,
+            success: () => {
+              wx.hideLoading();
+              wx.showToast({ 
+                title: '视频已保存', 
+                icon: 'success' 
+              });
+            },
+            fail: () => {
+              wx.hideLoading();
+              wx.showToast({ 
+                title: '保存失败', 
+                icon: 'none' 
+              });
+            }
+          });
+        },
+        fail: () => {
+          wx.hideLoading();
+          wx.showToast({ 
+            title: '下载失败', 
+            icon: 'none' 
+          });
+        }
+      });
+      return;
+    }
+
+    // 处理图片下载（原有逻辑）
+    if (!this.data.resultData.urls?.length) {
+      wx.showToast({
+        title: '没有可下载的内容',
         icon: 'none'
       });
       return;
