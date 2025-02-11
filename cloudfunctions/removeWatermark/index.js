@@ -4,6 +4,7 @@ const http = require('http');
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 });
@@ -101,37 +102,35 @@ function extractXhsUrl(text) {
 
 // 获取重定向后的URL并提取图片
 async function getRedirectUrl(urlInfo) {
-    console.log('[重定向] 开始')
-    try {
-        // 如果是对象，提取 url 属性
-        const targetUrl = typeof urlInfo === 'object' ? urlInfo.url : urlInfo
-        console.log('[重定向] 请求URL:', targetUrl)
+  console.log('[重定向] 开始');
+  try {
+    const targetUrl = typeof urlInfo === 'object' ? urlInfo.url : urlInfo;
+    console.log('[重定向] 请求 URL:', targetUrl);
 
-        const response = await axios.get(targetUrl, {
-            maxRedirects: 0,
-            validateStatus: function (status) {
-                return status >= 200 && status < 400
-            }
-        })
+    const response = await axios.get(targetUrl, {
+      maxRedirects: 0,
+      validateStatus: status => status >= 200 && status < 400,
+      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0)' }
+    });
 
-        // 检查是否有重定向
-        if (response.request.res.responseUrl) {
-            return response.request.res.responseUrl
-        }
-
-        if (response.headers.location) {
-            return response.headers.location
-        }
-
-        return targetUrl
-    } catch (error) {
-        if (error.response && error.response.headers.location) {
-            return error.response.headers.location
-        }
-        console.log('[错误] 完整错误:', error)
-        throw error
+    if (response.request.res.responseUrl) {
+      return response.request.res.responseUrl;
     }
+
+    if (response.headers.location) {
+      return response.headers.location;
+    }
+
+    return targetUrl;
+  } catch (error) {
+    if (error.response && error.response.headers.location) {
+      return error.response.headers.location;
+    }
+    console.log('[错误] 完整错误:', error);
+    throw error;
+  }
 }
+
 
 // 从笔记页面提取图片链接
 async function extractImagesFromNote(noteUrl) {
@@ -248,151 +247,271 @@ async function fetchVideoUrl(videoId) {
       return null;
   }
 }
+async function getVideoUrlFromHtml(redirectUrl) {
+  try {
+    console.log('[抖音] 请求视频页面:', redirectUrl);
+    
+    const response = await axios.get(redirectUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.douyin.com/',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+      }
+    });
 
+    const html = response.data;
+    console.log('[抖音] 页面HTML长度:', html.length);
 
+    // 解析 HTML 提取 JSON 数据
+    const match = html.match(/<script id="RENDER_DATA" type="application\/json">([\s\S]+?)<\/script>/);
+    if (!match) throw new Error('未找到 RENDER_DATA JSON');
 
+    const jsonData = JSON.parse(decodeURIComponent(match[1]));
 
-// 云函数入口函数
+    let videoUrl = null;
+    if (jsonData && jsonData.aweme && jsonData.aweme.video) {
+      const video = jsonData.aweme.video;
+      if (video.download_addr && video.download_addr.url_list.length > 0) {
+        videoUrl = video.download_addr.url_list[0];  // 优先选择无水印地址
+      } else if (video.play_addr && video.play_addr.url_list.length > 0) {
+        videoUrl = video.play_addr.url_list[0];  // 如果无水印地址不可用，使用有水印地址
+      }
+    }
+
+    if (!videoUrl) throw new Error('未找到视频地址');
+
+    console.log('[抖音] 解析到无水印视频地址:', videoUrl);
+    return videoUrl;
+  } catch (error) {
+    console.error('[抖音] HTML 解析失败:', error);
+    return null;
+  }
+}
+
+// 通过 aweme_id 调用 API 获取视频地址
+async function getDouyinVideoUrlByApi(aweme_id) {
+  try {
+    const apiUrl = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${aweme_id}&aid=1128&version_name=23.5.0&device_platform=webapp&cookie_enabled=true`;
+    console.log(`[抖音] 请求 API: ${apiUrl}`);
+
+    const response = await axios.get(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.douyin.com/',
+        'Accept': 'application/json',
+        'Cookie': '__ac_nonce=065c635c100e75b4e5351; __ac_signature=_02B4Z6wo00f01V3c8vQAAIDBmU9.h7RYPH-yxnsAAGrNec'
+      }
+    });
+
+    console.log('[抖音] API响应:', JSON.stringify(response.data, null, 2));
+
+    const videoData = response.data.aweme_detail.video;
+    let videoUrl = null;
+
+    if (videoData.download_addr && videoData.download_addr.url_list && videoData.download_addr.url_list.length > 0) {
+      videoUrl = videoData.download_addr.url_list[0];  // 无水印地址
+    } else if (videoData.play_addr && videoData.play_addr.url_list && videoData.play_addr.url_list.length > 0) {
+      videoUrl = videoData.play_addr.url_list[0];  // 有水印地址
+    }
+
+    if (!videoUrl) throw new Error('未找到视频地址');
+    console.log('[抖音] 解析到视频地址（API）:', videoUrl);
+
+    return videoUrl;
+  } catch (error) {
+    console.error('[抖音] API 请求失败:', error);
+    return null;
+  }
+}
+
+// 处理抖音视频解析
+async function handleDouyin(shortUrl) {
+  try {
+    const redirectUrl = await getRedirectUrl(shortUrl);
+    console.log('[抖音] 重定向URL:', redirectUrl);
+
+    // 从 URL 提取视频 ID
+    const videoIdMatch = redirectUrl.match(/video\/(\d+)/);
+    if (!videoIdMatch) {
+      throw new Error('无法提取视频ID');
+    }
+
+    const videoId = videoIdMatch[1];
+    console.log('[抖音] 视频ID:', videoId);
+
+    // 尝试通过 aweme_id 获取视频地址
+    let videoUrl = await getDouyinVideoUrlByApi(videoId);
+    
+    if (!videoUrl) {
+      // 如果 API 失败，尝试 HTML 解析
+      console.log('[抖音] API 获取失败，尝试 HTML 解析');
+      videoUrl = await getVideoUrlFromHtml(redirectUrl);
+    }
+
+    if (!videoUrl) throw new Error('无法获取视频地址');
+    return {
+      code: 0,
+      type: 'video',
+      data: videoUrl,
+      msg: 'success'
+    };
+
+  } catch (error) {
+    console.error('[抖音] 处理失败:', error);
+    return { code: -1, msg: '无法获取视频地址: ' + error.message };
+  }
+}
+
 exports.main = async (event, context) => {
   console.log('开始处理请求:', event);
   
   try {
-      const url = extractUrl(event.url);
-      console.log('处理URL:', url);
+      const urlInfo = extractUrl(event.url);
+      console.log('处理URL:', urlInfo);
       
-      const redirectUrl = await getRedirectUrl(url);
-      console.log('重定向URL:', redirectUrl);
-      
-      const html = await fetchPage(redirectUrl);
-      console.log('页面长度:', html.length);
-      console.log('[调试] HTML 预览:', html.substring(0, 1000));
+      // 根据平台判断调用不同的处理函数
+      if (urlInfo.platform === 'xiaohongshu') {
+          // 小红书处理逻辑
+          const redirectUrl = await getRedirectUrl(urlInfo.url);
+          console.log('重定向URL:', redirectUrl);
+          
+          const html = await fetchPage(redirectUrl);
+          console.log('页面长度:', html.length);
+          console.log('[调试] HTML 预览:', html.substring(0, 1000));
 
-      // 使用 cheerio 加载 HTML
-      const $ = cheerio.load(html);
+          // 使用 cheerio 加载 HTML
+          const $ = cheerio.load(html);
 
-      // **提取标题和描述**
-      let title = '', desc = '';
+          // **提取标题和描述**
+          let title = '', desc = '';
 
-      // 从 <title> 标签提取标题
-      const titleMatch = html.match(/<title>(.*?) - 小红书<\/title>/);
-      if (titleMatch) {
-          title = titleMatch[1];
-          console.log('从title标签提取到的标题:', title);
-      }
-
-      // 从 <meta> 标签提取描述
-      const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
-      if (descMatch) {
-          desc = descMatch[1].trim(); // 去除前后空格
-          console.log('从meta标签提取到的描述:', desc);
-      }
-
-      // 备用方案：从 JSON 数据中提取
-      if (!title || !desc) {
-          const noteDataMatch = html.match(/"title":"(.*?)","desc":"(.*?)","user":/);
-          if (noteDataMatch) {
-              title = title || noteDataMatch[1];
-              desc = desc || noteDataMatch[2];
-
-              // 处理转义字符
-              title = title.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '');
-              desc = desc.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '').replace(/\[话题\]/g, '');
-              
-              console.log('从JSON数据提取到的内容:', { title, desc });
+          // 从 <title> 标签提取标题
+          const titleMatch = html.match(/<title>(.*?) - 小红书<\/title>/);
+          if (titleMatch) {
+              title = titleMatch[1];
+              console.log('从title标签提取到的标题:', title);
           }
-      }
 
-      // **检查是否是视频内容**
-      const videoTypeMatch = html.match(/<meta name="og:type" content="([^"]+)"/);
-      const isVideo = videoTypeMatch && videoTypeMatch[1] === 'video';
-      console.log('内容类型:', isVideo ? 'video' : 'image');
+          // 从 <meta> 标签提取描述
+          const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+          if (descMatch) {
+              desc = descMatch[1].trim(); // 去除前后空格
+              console.log('从meta标签提取到的描述:', desc);
+          }
 
-      if (isVideo) {
-          // 尝试从 __INITIAL_STATE__ 中提取视频地址
-          const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?})<\/script>/);
-          if (stateMatch) {
-              try {
-                  // 清理 JSON 字符串中的特殊字符
-                  const jsonStr = stateMatch[1].replace(/undefined/g, 'null');
-                  const jsonData = JSON.parse(jsonStr);
+          // 备用方案：从 JSON 数据中提取
+          if (!title || !desc) {
+              const noteDataMatch = html.match(/"title":"(.*?)","desc":"(.*?)","user":/);
+              if (noteDataMatch) {
+                  title = title || noteDataMatch[1];
+                  desc = desc || noteDataMatch[2];
+
+                  // 处理转义字符
+                  title = title.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '');
+                  desc = desc.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\/g, '').replace(/\[话题\]/g, '');
                   
-                  // 新的视频地址提取路径
-                  const videoUrl = jsonData?.note?.noteDetailMap?.[jsonData?.note?.currentNoteId]?.note?.video?.media?.stream?.h264[0]?.masterUrl;
-                  
-                  if (videoUrl) {
-                      console.log('找到视频地址:', videoUrl);
-                      return {
-                          code: 0,
-                          type: 'video',
-                          data: videoUrl,
-                          title,
-                          desc,
-                          msg: 'success'
-                      };
-                  } else {
-                      console.log('未找到视频地址');
-                  }
-              } catch (e) {
-                  console.error('解析视频JSON失败:', e);
-                  // 输出更详细的错误信息
-                  if (stateMatch[1]) {
-                      console.log('JSON字符串预览:', stateMatch[1].substring(0, 200));
+                  console.log('从JSON数据提取到的内容:', { title, desc });
+              }
+          }
+
+          // **检查是否是视频内容**
+          const videoTypeMatch = html.match(/<meta name="og:type" content="([^"]+)"/);
+          const isVideo = videoTypeMatch && videoTypeMatch[1] === 'video';
+          console.log('内容类型:', isVideo ? 'video' : 'image');
+
+          if (isVideo) {
+              // 尝试从 __INITIAL_STATE__ 中提取视频地址
+              const stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?})<\/script>/);
+              if (stateMatch) {
+                  try {
+                      // 清理 JSON 字符串中的特殊字符
+                      const jsonStr = stateMatch[1].replace(/undefined/g, 'null');
+                      const jsonData = JSON.parse(jsonStr);
+                      
+                      // 新的视频地址提取路径
+                      const videoUrl = jsonData?.note?.noteDetailMap?.[jsonData?.note?.currentNoteId]?.note?.video?.media?.stream?.h264[0]?.masterUrl;
+                      
+                      if (videoUrl) {
+                          console.log('找到视频地址:', videoUrl);
+                          return {
+                              code: 0,
+                              type: 'video',
+                              data: videoUrl,
+                              title,
+                              desc,
+                              msg: 'success'
+                          };
+                      } else {
+                          console.log('未找到视频地址');
+                      }
+                  } catch (e) {
+                      console.error('解析视频JSON失败:', e);
+                      // 输出更详细的错误信息
+                      if (stateMatch[1]) {
+                          console.log('JSON字符串预览:', stateMatch[1].substring(0, 200));
+                      }
                   }
               }
           }
+
+          // **如果不是视频，则解析图片**
+          const imageUrls = new Set();
+
+          // 直接匹配图片 ID
+          const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g);
+          if (allMatches) {
+              console.log('找到所有可能的图片ID:', allMatches);
+              allMatches.forEach(id => {
+                  console.log('处理图片ID:', id);
+                  const url = `https://sns-img-qc.xhscdn.com/${id}?imageView2/format/webp`;
+                  imageUrls.add(url);
+              });
+          }
+
+          // 直接匹配图片 URL
+          const urlMatches = html.match(/https?:\/\/[^"'\s]+1040g[^"'\s]+/g);
+          if (urlMatches) {
+              console.log('找到所有可能的图片URL:', urlMatches);
+              urlMatches.forEach(url => {
+                  const idMatch = url.match(/1040g[a-z0-9]+(?=!nd_)/);
+                  if (idMatch) {
+                      console.log('从URL中提取图片ID:', idMatch[0]);
+                      const cleanUrl = `https://sns-img-qc.xhscdn.com/${idMatch[0]}?imageView2/format/webp`;
+                      imageUrls.add(cleanUrl);
+                  }
+              });
+          }
+
+          if (imageUrls.size === 0) {
+              // 输出一小段包含 1040g 的内容
+              const context = html.split('1040g').map(part => {
+                  const start = Math.max(0, part.length - 50);
+                  const end = Math.min(part.length, 100);
+                  return part.slice(start, end);
+              });
+              console.log('包含1040g的上下文:', context);
+              return { code: -1, msg: '未找到图片或视频' };
+          }
+
+          const result = Array.from(imageUrls);
+          console.log('找到图片数量:', result.length);
+          console.log('第一张图片URL:', result[0]);
+
+          return {
+              code: 0,
+              type: isVideo ? 'video' : 'image',
+              data: result,
+              title: title || '',
+              desc: desc || '',
+              msg: result.length > 0 ? 'success' : '未找到图片'
+          };
+
+      // } else if (urlInfo.platform === 'douyin') {
+      //     // 抖音处理逻辑
+      //     return await handleDouyin(urlInfo.url);
+      } else {
+          return { code: -1, msg: '其他平台正在开发中，敬请期待～' };
       }
-
-      // **如果不是视频，则解析图片**
-      const imageUrls = new Set();
-
-      // 直接匹配图片 ID
-      const allMatches = html.match(/1040g[a-z0-9]+(?=!nd_[a-z_0-9]+)/g);
-      if (allMatches) {
-          console.log('找到所有可能的图片ID:', allMatches);
-          allMatches.forEach(id => {
-              console.log('处理图片ID:', id);
-              const url = `https://sns-img-qc.xhscdn.com/${id}?imageView2/format/webp`;
-              imageUrls.add(url);
-          });
-      }
-
-      // 直接匹配图片 URL
-      const urlMatches = html.match(/https?:\/\/[^"'\s]+1040g[^"'\s]+/g);
-      if (urlMatches) {
-          console.log('找到所有可能的图片URL:', urlMatches);
-          urlMatches.forEach(url => {
-              const idMatch = url.match(/1040g[a-z0-9]+(?=!nd_)/);
-              if (idMatch) {
-                  console.log('从URL中提取图片ID:', idMatch[0]);
-                  const cleanUrl = `https://sns-img-qc.xhscdn.com/${idMatch[0]}?imageView2/format/webp`;
-                  imageUrls.add(cleanUrl);
-              }
-          });
-      }
-
-      if (imageUrls.size === 0) {
-          // 输出一小段包含 1040g 的内容
-          const context = html.split('1040g').map(part => {
-              const start = Math.max(0, part.length - 50);
-              const end = Math.min(part.length, 100);
-              return part.slice(start, end);
-          });
-          console.log('包含1040g的上下文:', context);
-          return { code: -1, msg: '未找到图片或视频' };
-      }
-
-      const result = Array.from(imageUrls);
-      console.log('找到图片数量:', result.length);
-      console.log('第一张图片URL:', result[0]);
-
-      return {
-          code: 0,
-          type: isVideo ? 'video' : 'image',
-          data: result,
-          title: title || '',
-          desc: desc || '',
-          msg: result.length > 0 ? 'success' : '未找到图片'
-      };
 
   } catch (error) {
       console.error('处理失败:', error);

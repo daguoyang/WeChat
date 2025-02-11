@@ -2,7 +2,6 @@
   "pages": [
     "pages/index/index",
     "pages/goods-list/index",
-    "pages/examples/index",
     "pages/user-center/index",
     "pages/exampleDetail/index",
     "pages/deployService/index",
@@ -22,7 +21,7 @@
     "backgroundColor": "#F6F6F6",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "果果去水印工具",
+    "navigationBarTitleText": "妙妙去水印工具",
     "navigationBarTextStyle": "black"
   },
   "sitemapLocation": "sitemap.json",
@@ -38,12 +37,6 @@
         "text": "快速开始",
         "iconPath": "images/icons/home.png",
         "selectedIconPath": "images/icons/home-active.png"
-      },
-      {
-        "pagePath": "pages/examples/index",
-        "text": "基础能力",
-        "iconPath": "images/icons/examples.png",
-        "selectedIconPath": "images/icons/examples-active.png"
       },
       {
         "pagePath": "pages/user-center/index",
