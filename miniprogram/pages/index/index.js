@@ -32,12 +32,9 @@ Page({
       success: res => {
         console.log('云函数返回数据：', res);
         if (res.result.code === 0) {
-          // 处理视频和图片
           this.setData({ 
             resultData: {
-              // 如果是视频，则将云函数返回的视频地址（存储在 data 字段）赋给 resultData.data
               data: res.result.type === 'video' ? res.result.data : '',
-              // 如果是图片，则保留 urls 字段
               urls: res.result.type === 'image' ? res.result.data : [],
               title: res.result.title || '',
               desc: res.result.desc || '',
@@ -66,7 +63,6 @@ Page({
   },
 
   downloadAll() {
-    // 检查是否有解析结果
     if (!this.data.resultData) {
       wx.showToast({
         title: '请先解析链接',
@@ -75,7 +71,6 @@ Page({
       return;
     }
 
-    // 处理视频下载
     if (this.data.resultData.type === 'video') {
       wx.showLoading({ title: '下载中...' });
       wx.downloadFile({
@@ -110,7 +105,6 @@ Page({
       return;
     }
 
-    // 处理图片下载（原有逻辑）
     if (!this.data.resultData.urls?.length) {
       wx.showToast({
         title: '没有可下载的内容',
@@ -118,7 +112,7 @@ Page({
       });
       return;
     }
-    
+
     const totalImages = this.data.resultData.urls.length;
     this.setData({
       showProgress: true,
@@ -128,7 +122,6 @@ Page({
 
     const downloadNext = (index) => {
       if (index >= totalImages) {
-        // 全部下载完成
         this.setData({ showProgress: false });
         wx.showToast({ title: '下载完成', icon: 'success' });
         return;
@@ -142,7 +135,6 @@ Page({
             filePath: res.tempFilePath,
             success: () => {
               this.setData({ currentDownload: index + 1 });
-              // 下载下一张
               downloadNext(index + 1);
             },
             fail: () => {
@@ -158,11 +150,18 @@ Page({
       });
     };
 
-    // 开始下载第一张
     downloadNext(0);
   },
 
   onRefresh() {
+    this.setData({
+      url: '',
+      resultData: null
+    });
+  },
+
+  // 新增的清空方法
+  clearInput() {
     this.setData({
       url: '',
       resultData: null

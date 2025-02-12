@@ -1,0 +1,17 @@
+<view class="qrcode-container">
+  <view class="qrcode-card">
+    <image class="qrcode" src="{{qrCodeUrl}}" mode="aspectFit" show-menu-by-longpress></image>
+    <text class="tip">长按保存小程序码</text>
+  </view>
+  
+  <view class="share-buttons">
+    <button class="share-btn" open-type="share">
+      <image class="share-icon" src="../../images/icons/share.svg"></image>
+      <text>分享给朋友</text>
+    </button>
+    <button class="save-btn" bindtap="saveImage">
+      <image class="save-icon" src="../../images/icons/download.svg"></image>
+      <text>保存到相册</text>
+    </button>
+  </view>
+</view> 

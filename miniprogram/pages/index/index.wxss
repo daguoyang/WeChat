@@ -74,7 +74,7 @@
 }
 
 /* 复制/刷新按钮 */
-.function-btn:last-child {
+.function-btn:nth-child(3) {
   background: linear-gradient(45deg, #6a11cb, #2575fc);
 }
 
@@ -152,6 +152,9 @@
   padding: 0;
   margin: -5rpx !important; /* 强制移除所有边距 */
   display: block;
+  justify-content: center;  /* 水平居中 */
+  align-items: center;  /* 垂直居中 */
+  text-align: center;  /* 确保文本居中 */
   position: relative;
 }
 
@@ -180,6 +183,7 @@
   display: block;
   position: relative;
   text-align: center;
+  align-items: center; /* 垂直居中 */
   transition: transform 0.2s ease, box-shadow 0.2s ease;  /* 过渡效果 */
 }
 
@@ -210,6 +214,11 @@
 
 .premium {
   background: linear-gradient(45deg, #6a11cb, #2575fc);
+}
+
+/* 清空按钮样式 */
+.clear-btn {
+  background: linear-gradient(45deg,rgb(19, 116, 69),rgb(21, 240, 134));
 }
 
 /* 在现有样式基础上添加 */

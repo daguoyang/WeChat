@@ -1,0 +1,70 @@
+.qrcode-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrcode-card {
+  background: white;
+  border-radius: 24rpx;
+  padding: 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+  width: 400rpx;
+  height: 400rpx;
+}
+
+.qrcode {
+  width: 100%;
+  height: 100%;
+  margin-bottom: 20rpx;
+}
+
+.tip {
+  font-size: 28rpx;
+  color: #999;
+  margin-top: 20rpx;
+}
+
+.share-buttons {
+  width: 100%;
+  display: flex;
+  gap: 20rpx;
+}
+
+.share-btn, .save-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  border: none;
+  color: white;
+  font-size: 28rpx;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #6e45e2 0%, #88d3ce 100%);
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #88d3ce 0%, #6e45e2 100%);
+}
+
+.share-icon, .save-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+button::after {
+  border: none;
+} 

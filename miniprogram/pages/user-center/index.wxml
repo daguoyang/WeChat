@@ -1,48 +1,22 @@
-<!-- pages/me/index.wxml -->
 <view class="page_container">
-  <view class="top_bg" />
+  <!-- 顶部背景区域 -->
+  <view class="top_bg"></view>
+  
+  <!-- 主要内容区域 -->
   <view class="main_content">
-    <view class="userinfo_container">
-      <image class="avatar" src="../../images/icons/avatar.png" bind:tap="getOpenId" mode="widthFix" />
-      <block wx:if="{{ !openId }}">
-        <view class="username" bind:tap="getOpenId">请点击登录</view>
-      </block>
-      <block wx:else>
-        <view class="username">openId: {{ openId }}</view>
-      </block>
+    <!-- 用户信息卡片 -->
+    <view class="user_card">
+      <view class="userinfo_container">
+        <image class="avatar" src="https://index-tpgszhqlask-ysc-oplyvayipt.cn-shenzhen.fcapp.run/image?src=2025/2/11/1739266232070.ico&mimetype=image/vnd.microsoft.icon" mode="aspectFill" />
+        <text class="username">你好主人～</text>
+      </view>
     </view>
-    <view class="settings_container">
-      <!-- <view class="setting_item">
-        <view class="left">
-          <image class="setting_icon" src="../../images/icons/setting.svg" />
-          <view class="setting_text">个人信息设置</view>
-        </view>
-        <image class="arrow_icon" src="../../images/arrow.svg" />
-      </view> -->
-      <!-- <view class="setting_item">
-        <view class="left">
-          <image class="setting_icon" src="../../images/icons/question.svg" />
-          <view class="setting_text">常见问题</view>
-        </view>
-        <image class="arrow_icon" src="../../images/arrow.svg" />
-      </view> -->
-      <view class="setting_item">
-        <view class="left">
-          <image class="setting_icon" src="../../images/icons/customer-service.svg" />
-          <!-- <view class="setting_text">联系客服</view> -->
-          <button open-type="contact" class="contact-button">
-            联系客服
-          </button>
-        </view>
-        <image class="arrow_icon" src="../../images/arrow.svg" />
-      </view>
-      <view class="setting_item" bind:tap="gotoWxCodePage">
-        <view class="left">
-          <image class="setting_icon" src="../../images/icons/share.svg" />
-          <view class="setting_text">分享小程序</view>
-        </view>
-        <image class="arrow_icon" src="../../images/arrow.svg" />
-      </view>
+
+    <!-- 设置菜单卡片 -->
+    <view class="menu_card">
+      
+
+      
     </view>
   </view>
   <cloud-tip-modal showTipProps="{{showTip}}" title="{{title}}" content="{{content}}" />

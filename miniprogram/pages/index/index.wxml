@@ -1,6 +1,6 @@
 <view class="container">
   <view class="header">
-    <text class="title">妙妙去水印工具</text>
+    <text class="title">嗨森去水印</text>
   </view>
 
   <view class="input-area">
@@ -13,21 +13,30 @@
   </view>
 
   <!-- 按钮组 -->
-  <view class="button-group">
-    <button class="function-btn analyze" hover-class="button-hover" bindtap="parseUrl">
-      <text class="btn-text">解析</text>
-    </button>
-    <button class="function-btn download" hover-class="button-hover" bindtap="downloadAll">
-      <text class="btn-text">下载全部</text>
-    </button>
-    <button 
-      class="function-btn" 
-      hover-class="button-hover" 
-      bindtap="{{resultData ? 'copyText' : 'onRefresh'}}"
-    >
-      <text class="btn-text">{{resultData ? '复制文案' : '刷新'}}</text>
-    </button>
-  </view>
+<view class="button-group">
+  <button class="function-btn analyze" hover-class="button-hover" bindtap="parseUrl">
+    <text class="btn-text">解析</text>
+  </button>
+  <button class="function-btn download" hover-class="button-hover" bindtap="downloadAll">
+    <text class="btn-text">下载全部</text>
+  </button>
+  <button 
+    class="function-btn" 
+    hover-class="button-hover" 
+    bindtap="{{resultData ? 'copyText' : 'onRefresh'}}"
+  >
+    <text class="btn-text">{{resultData ? '复制文案' : '刷新'}}</text>
+  </button>
+  <!-- 新增清空按钮 -->
+<button 
+  class="function-btn clear-btn" 
+  hover-class="button-hover" 
+  bindtap="clearInput"
+>
+  <text class="btn-text">清空</text>
+</button>
+
+</view>
 
   <!-- 下载进度展示 -->
   <view class="download-progress" wx:if="{{showProgress}}">

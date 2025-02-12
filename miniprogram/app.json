@@ -15,13 +15,14 @@
     "pages/cloudbaseModuleInstallTips/index",
     "pages/cloudbaseModuleGuide/index",
     "pages/business/index",
-    "pages/result/result"
+    "pages/result/result",
+    "pages/wxcode/index"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "妙妙去水印工具",
+    "navigationBarTitleText": "去水印",
     "navigationBarTextStyle": "black"
   },
   "sitemapLocation": "sitemap.json",

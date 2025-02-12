@@ -52,9 +52,9 @@ Page({
       });
   },
 
-  gotoWxCodePage() {
+  gotoWxCodePage: function() {
     wx.navigateTo({
-      url: `/pages/exampleDetail/index?envId=${envList?.[0]?.envId}&type=getMiniProgramCode`,
-    });
+      url: '/pages/wxcode/index'
+    })
   },
 });
